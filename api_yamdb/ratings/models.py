@@ -13,11 +13,12 @@ class User(models.Model):
     ]
     username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(unique=True, max_length=254)
-    role = models.SlugField(max_length=50, choices=USER_ROLE_CHOICES, default='user')
+    role = models.SlugField(max_length=50,
+                            choices=USER_ROLE_CHOICES, default='user')
     bio = models.TextField(blank=True, null=True)
     first_name = models.CharField(max_length=150, blank=True, null=True)
     last_name = models.CharField(max_length=150, blank=True, null=True)
-    
+
     class Meta:
         ordering = ['id']
 
@@ -27,8 +28,8 @@ class User(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
-    slug = models.SlugField(unique=True,  max_length=50)
-    
+    slug = models.SlugField(unique=True, max_length=50)
+
     class Meta:
         ordering = ['name']
         verbose_name = 'Категория'
@@ -41,7 +42,7 @@ class Category(models.Model):
 class Genre(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
-    
+
     class Meta:
         ordering = ['name']
         verbose_name = 'Жанр'
@@ -66,11 +67,11 @@ class Genre_title(models.Model):
         blank=True,
         null=True
     )
-    
+
     class Meta:
         verbose_name = 'Жанр произведения'
         verbose_name_plural = 'Жанры произведения'
-    
+
     def __str__(self):
         return f'{self.title} - {self.genre}'
 

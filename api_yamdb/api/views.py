@@ -6,32 +6,33 @@ from .serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              TitleSerializer)
 from ratings.models import Category, Genre, Review, Title
+from .permissions import AuthorOrReadOnly, permissions
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     pagination_class = PageNumberPagination
     serializer_class = TitleSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     pagination_class = PageNumberPagination
     serializer_class = CategorySerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     pagination_class = PageNumberPagination
     serializer_class = GenreSerializer
-
-
-class UserViewSet(viewsets.ModelViewSet):
-    pass
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -47,6 +48,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
@@ -58,3 +60,10 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, review=self.get_review())
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = (
+        permissions.IsAuthenticated,
+        AuthorOrReadOnly
+    )
