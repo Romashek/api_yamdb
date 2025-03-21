@@ -10,7 +10,7 @@ class User(models.Model):
     ('moderator', 'Moderator'),
     ]
     username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, max_length=254)
     role = models.SlugField(max_length=50, choices=USER_ROLE_CHOICES, default='user')
     bio = models.TextField(blank=True, null=True)
     first_name = models.CharField(max_length=150, blank=True, null=True)
@@ -24,8 +24,8 @@ class User(models.Model):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=256)
+    slug = models.SlugField(unique=True,  max_length=50)
     
     class Meta:
         ordering = ['name']
@@ -117,6 +117,8 @@ class Title(models.Model):
     genre = models.ManyToManyField(
         Genre,
     )
+    description = models.TextField(blank=True)
+
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
