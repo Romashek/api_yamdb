@@ -20,7 +20,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class GenreSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         fields = ('name', 'slug')
         model = Genre
