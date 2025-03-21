@@ -1,16 +1,38 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
+from rest_framework.pagination import PageNumberPagination
 
 from api.permissions import IsAuthorOrIsAuthenticated
-from api.serializers import CommentSerializer, ReviewSerializer
-from ratings.models import Review, Title
+from api.serializers import (CategorySerializer, CommentSerializer,
+                             GenreSerializer, ReviewSerializer,
+                             TitleSerializer)
+from ratings.models import Category, Genre, Review, Title
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    pagination_class = PageNumberPagination
+    serializer_class = TitleSerializer
+
+
+class CategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    pagination_class = PageNumberPagination
+    serializer_class = CategorySerializer
+
+
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = Genre.objects.all()
+    pagination_class = PageNumberPagination
+    serializer_class = GenreSerializer
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    pass
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [
-        IsAuthorOrIsAuthenticated, permissions.IsAuthenticatedOrReadOnly
-    ]
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
