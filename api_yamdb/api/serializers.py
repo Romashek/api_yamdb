@@ -48,24 +48,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Review
-        # validators = [
-        #     serializers.UniqueTogetherValidator(
-        #         queryset=Review.objects.all(),
-        #         fields=('author', 'title')
-        #     )
-        # ]
-
-    # def validate_title(self, title):
-    #     # title_reviews = title.reviews.all()
-    #     # reviews_authors = [review.author for review in title_reviews]
-    #     # if self.context['request'].user in reviews_authors:
-    #     if Review.objects.filter(
-    #         title=title,
-    #         author=self.context['request'].user
-    #     ).exists():
-    #         raise serializers.ValidationError(
-    #             'You are not allowed to add more than one review per title!')
-    #     return title
 
 
 class CommentSerializer(serializers.ModelSerializer):

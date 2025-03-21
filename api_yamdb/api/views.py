@@ -2,8 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
 from rest_framework.pagination import PageNumberPagination
 
-from api.permissions import IsAuthorOrIsAuthenticated
-from api.serializers import (CategorySerializer, CommentSerializer,
+from .serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
                              TitleSerializer)
 from ratings.models import Category, Genre, Review, Title
@@ -48,9 +47,6 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = [
-        IsAuthorOrIsAuthenticated, permissions.IsAuthenticatedOrReadOnly
-    ]
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')
