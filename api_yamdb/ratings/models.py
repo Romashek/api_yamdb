@@ -1,6 +1,8 @@
-from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.utils import timezone
+
+from ratings.constants import NUMBER_OF_CHAR
 
 
 class User(models.Model):
@@ -26,7 +28,7 @@ class User(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=256)
-    slug = models.SlugField(unique=True,  max_length=50)
+    slug = models.SlugField(unique=True, max_length=50)
 
     class Meta:
         ordering = ['name']
@@ -35,23 +37,6 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class Comments(models.Model):
-    review = models.ForeignKey(
-        'Review', on_delete=models.CASCADE, related_name='comments')
-    text = models.TextField()
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='comments')
-    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-
-    class Meta:
-        ordering = ['-pub_date']
-        verbose_name = 'Комментрий'
-        verbose_name_plural = 'Комментарии'
-
-    def __str__(self):
-        return self.text
 
 
 class Genre(models.Model):
@@ -91,30 +76,11 @@ class Genre_title(models.Model):
         return f'{self.title} - {self.genre}'
 
 
-class Review(models.Model):
-    title = models.ForeignKey(
-        'Title',
-        on_delete=models.CASCADE,
-        related_name='reviews'
-    )
-    text = models.TextField()
-    author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
-    score = models.IntegerField('Оценка', validators=[MinValueValidator(1), MaxValueValidator(10)])
-    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-
-    class Meta:
-        ordering = ['-pub_date']
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'
-
-    def __str__(self):
-        return self.text
-
-
 class Title(models.Model):
     name = models.CharField(max_length=200)
-    year = models.IntegerField(validators=[MaxValueValidator(timezone.now().year)])
+    year = models.IntegerField(
+        validators=[MaxValueValidator(timezone.now().year)]
+    )
     genre = models.ManyToManyField(
         Genre,
     )
@@ -135,3 +101,75 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        verbose_name='Произведение'
+    )
+    text = models.TextField(
+        verbose_name='Текст',
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор'
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+    score = models.PositiveSmallIntegerField(
+        verbose_name='Оценка',
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
+    )
+
+    class Meta:
+        default_related_name = 'reviews'
+        ordering = ('-pub_date',)
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_review'
+            )
+        ]
+
+    def __str__(self):
+        return self.text[:NUMBER_OF_CHAR]
+
+
+class Comment(models.Model):
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        verbose_name='Отзыв'
+    )
+    text = models.TextField(
+        verbose_name='Текст',
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+
+    class Meta:
+        default_related_name = 'comments'
+        ordering = ('-pub_date',)
+        verbose_name = 'Комментрий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return (f'{self.text[:NUMBER_OF_CHAR]}, '
+                f'Отзыв: {self.review[:NUMBER_OF_CHAR]}, '
+                f'Автор: {self.author}')
