@@ -1,6 +1,7 @@
 from django.urls import include, path
 from rest_framework import routers
 from django.contrib.auth import views
+from . import views
 from .views import (TitleViewSet, ReviewViewSet, CommentViewSet,
                     CategoryViewSet, GenreViewSet, UserViewSet)
 
@@ -20,6 +21,6 @@ v1_router.register('users', UserViewSet, basename='users')
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
     path('v1/', include('djoser.urls.jwt')),
-    path('login/', views.LoginView.as_view(), name='login'),
-    path('logout/', views.LogoutView.as_view(), name='logout'),
+    path('register/', views.register, name='register'),
+    path('verify-email/<str:token>/', views.verify_email, name='verify_email'),
 ]
