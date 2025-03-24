@@ -1,6 +1,9 @@
 import uuid
-from rest_framework.decorators import action
 from django.core.mail import send_mail
+from rest_framework.decorators import api_view
+from django.contrib.auth.tokens import default_token_generator
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
@@ -12,6 +15,7 @@ from .serializers import (CategorySerializer, CommentSerializer,
                              GetTokenSerializer, UserAdminSerializer)
 from ratings.models import Category, Genre, Review, Title, User
 from .permissions import AuthorOrReadOnly, permissions
+
 
 
 def get_confirmation_code(user):
@@ -89,6 +93,7 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'username'
 
 
+
 class RegisterViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'])
@@ -124,3 +129,23 @@ class TokenViewSet(viewsets.ViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+
+# Попытка реализовать регистрацию на функциях а не классах
+@api_view(['POST'])
+def register(request):
+    serializer = RegisterSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data['username']
+    )
+    token = default_token_generator.make_token(user)
+    send_mail(
+        subject='Registration',
+        message=f'Your token: {token}',
+        from_email=None,
+        recipient_list=[user.email],
+    )
+
+    return Response(serializer.data)
