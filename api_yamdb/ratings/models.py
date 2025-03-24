@@ -1,7 +1,6 @@
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
-from django.contrib.auth.models import AbstractUser
 
 
 class User(models.Model):
@@ -101,7 +100,8 @@ class Review(models.Model):
     text = models.TextField()
     author = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='reviews')
-    score = models.IntegerField('Оценка', validators=[MinValueValidator(1), MaxValueValidator(10)])
+    score = models.IntegerField('Оценка', validators=[MinValueValidator(1),
+                                                      MaxValueValidator(10)])
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
 
     class Meta:
@@ -136,7 +136,3 @@ class Title(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class CustomUser(AbstractUser):
-    email_verified = models.BooleanField(default=False)

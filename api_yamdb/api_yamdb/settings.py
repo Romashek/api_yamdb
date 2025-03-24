@@ -131,5 +131,4 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-AUTH_USER_MODEL = 'accounts.CustomUser'
 EMAIL_HOST_USER = 'user@example.com'
