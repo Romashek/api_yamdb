@@ -1,4 +1,5 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 
@@ -18,6 +19,7 @@ class User(models.Model):
     bio = models.TextField(blank=True, null=True)
     first_name = models.CharField(max_length=150, blank=True, null=True)
     last_name = models.CharField(max_length=150, blank=True, null=True)
+    confirmation_code = models.SlugField(null=True, blank=True)
 
     class Meta:
         ordering = ['id']

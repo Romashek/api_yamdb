@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
+from rest_framework.validators import UniqueValidator
 
 from ratings.models import Category, Comment, Genre, Review, Title, User
 
@@ -66,6 +67,13 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    email = serializers.EmailField(
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+
     class Meta:
         model = User
         fields = ('username', 'email')
@@ -76,6 +84,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                 {"username": ["Вы не можете использоват этот username!"]}
             )
         return data
+
 
 
 class GetTokenSerializer(serializers.Serializer):
