@@ -1,12 +1,32 @@
+import uuid
+from rest_framework.decorators import action
+from django.core.mail import send_mail
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets
 from rest_framework.pagination import PageNumberPagination
 
 from .serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
-                             TitleSerializer)
-from ratings.models import Category, Genre, Review, Title
+                             TitleSerializer, RegisterSerializer,
+                             GetTokenSerializer, UserAdminSerializer)
+from ratings.models import Category, Genre, Review, Title, User
 from .permissions import AuthorOrReadOnly, permissions
+
+
+def get_confirmation_code(user):
+    try:
+        confirmation_code = str(uuid.uuid4()).split("-")[0]
+        user.confirmation_code = confirmation_code
+        user.save()
+        send_mail(
+            'Код подтверждения',
+            f'Ваш код для подтверждения: {user.confirmation_code}',
+            settings.ADMIN_EMAIL,
+            [user.email]
+        )
+    except Exception as e:
+        raise ValidationError(f"Ошибка при отправке кода подтверждения: {e}")
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -63,7 +83,44 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = (
-        permissions.IsAuthenticated,
-        AuthorOrReadOnly
-    )
+    queryset = User.objects.all()
+    serializer_class = UserAdminSerializer
+    pagination_class = PageNumberPagination
+    lookup_field = 'username'
+
+
+class RegisterViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['post'])
+    def signup(self, request):
+        user = User.objects.filter(**request.data)
+        if user.exists():
+            get_confirmation_code(user)
+            return Response(request.data, status=status.HTTP_200_OK)
+
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            user = User.objects.filter(**serializer.data)
+            get_confirmation_code(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class TokenViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['post'])
+    def token(self, request):
+        serializer = GetTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = get_object_or_404(User, username=serializer.data['username'])
+        if serializer.data['confirmation_code'] == user.confirmation_code:
+            refresh = RefreshToken.for_user(user)
+            return Response(
+                {'token': str(refresh.access_token)},
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            'Проверьте правильность указанных для получения токена данных.',
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
