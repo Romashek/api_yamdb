@@ -8,6 +8,8 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, viewsets, status
 from rest_framework.pagination import PageNumberPagination
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 from .serializers import (CategorySerializer, CommentSerializer,
                              GenreSerializer, ReviewSerializer,
@@ -115,3 +117,25 @@ def register(request):
 
     except KeyError as e:
         return Response({"error": f"Missing key: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def get_token(request):
+    serializer = GetTokenSerializer(data=request.data)
+    if serializer.is_valid():
+        username = serializer.validated_data['username']
+        confirmation_code = serializer.validated_data['confirmation_code']
+
+        try:
+            user = User.objects.get(username=username)
+            if user.confirmation_code == confirmation_code:
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(refresh.access_token),
+                })
+            else:
+                return Response({"error": "Неверный код подтверждения"}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
