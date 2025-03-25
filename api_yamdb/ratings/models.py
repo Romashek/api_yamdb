@@ -1,29 +1,40 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
 from ratings.constants import NUMBER_OF_CHAR
 
 
-class User(models.Model):
-    USER_ROLE_CHOICES = [
-    ('user', 'User'),
-    ('admin', 'Admin'),
-    ('moderator', 'Moderator'),
+class User(AbstractUser):
+    USER = 'user'
+    ADMIN = 'admin'
+    MODERATOR = 'moderator'
+    ROLES = [
+        (USER, 'user'),
+        (ADMIN, 'admin'),
+        (MODERATOR, 'moderator')
     ]
-    username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField(unique=True, max_length=254)
-    role = models.SlugField(max_length=50,
-                            choices=USER_ROLE_CHOICES, default='user')
-    bio = models.TextField(blank=True, null=True)
-    first_name = models.CharField(max_length=150, blank=True, null=True)
-    last_name = models.CharField(max_length=150, blank=True, null=True)
+    username = models.SlugField(max_length=150, unique=True)
+    email = models.EmailField(max_length=254, unique=True)
+    bio = models.TextField(blank=True)
+    role = models.SlugField(choices=ROLES, default=USER)
+    confirmation_code = models.SlugField(null=True, blank=True)
 
     class Meta:
         ordering = ['id']
 
-    def __str__(self):
-        return self.username
+    @property
+    def is_user(self):
+        return self.role == self.USER
+
+    @property
+    def is_admin(self):
+        return self.role == self.ADMIN
+
+    @property
+    def is_moderator(self):
+        return self.role == self.MODERATOR
 
 
 class Category(models.Model):

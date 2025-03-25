@@ -110,6 +110,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
+AUTH_USER_MODEL = 'ratings.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS':
