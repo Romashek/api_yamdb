@@ -1,26 +1,27 @@
 from django.shortcuts import get_object_or_404
 import uuid
 from rest_framework import permissions, viewsets, status
-from django.contrib.auth.tokens import default_token_generator
-from django.db import IntegrityError
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status, filters, mixins
-from django_filters import rest_framework
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Avg
 from django.conf import settings
 from django.core.mail import send_mail
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.pagination import PageNumberPagination
 
-from .serializers import (CategorySerializer, CommentSerializer, GetTokenSerializer,
-                             GenreSerializer, ReviewSerializer, RegisterSerializer,
-                             TitleSerializer, UserAdminSerializer, UserSerializer)
+from .serializers import (CategorySerializer, CommentSerializer,
+                          GetTokenSerializer,
+                          GenreSerializer, ReviewSerializer,
+                          RegisterSerializer,
+                          TitleReadSerializer, TitleWriteSerializer,
+                          UserAdminSerializer, UserSerializer)
 from reviews.models import Category, Genre, Review, Title, User
-from api.permissions import (IsAdmin, IsAdminOrOwnerOrReadOnly, IsAdminOrReadOnly)
+from api.permissions import (IsAdmin, IsAdminOrOwnerOrReadOnly,
+                             IsAdminOrReadOnly)
+from .filters import TitlesFilter
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -51,17 +52,6 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        # return Response(serializer.data)
-
-        # if request.method == "PATCH":
-        #     serializer = self.get_serializer(
-        #         request.user,
-        #         data=request.data,
-        #         partial=True
-        #     )
-        #     serializer.is_valid(raise_exception=True)
-        #     serializer.save()
-        #     return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
@@ -87,7 +77,8 @@ def register(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     except KeyError as e:
-        return Response({"error": f"Missing key: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": f"Missing key: {str(e)}"},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -107,21 +98,12 @@ def get_token(request):
                     'access': str(refresh.access_token),
                 })
             else:
-                return Response({"error": "Неверный код подтверждения"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Неверный код подтверждения"},
+                                status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Пользователь не найден"},
+                            status=status.HTTP_404_NOT_FOUND)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TitlesFilter(rest_framework.FilterSet):
-    category = rest_framework.CharFilter(field_name='category__slug')
-    genre = rest_framework.CharFilter(field_name='genre__slug')
-    year = rest_framework.NumberFilter(field_name='year')
-    name = rest_framework.CharFilter(field_name='name')
-
-    class Meta:
-        model = Title
-        fields = 'category', 'genre', 'year', 'name'
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -133,8 +115,12 @@ class TitleViewSet(viewsets.ModelViewSet):
     filterset_class = (TitlesFilter)
     filterser_fields = ('category', 'genre', 'name', 'year')
     pagination_class = PageNumberPagination
-    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
 
 class CategoryViewSet(mixins.CreateModelMixin,
