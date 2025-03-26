@@ -4,7 +4,10 @@ from rest_framework import permissions, viewsets, status
 from django.contrib.auth.tokens import default_token_generator
 from django.db import IntegrityError
 from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework import status
+from rest_framework import status, filters, mixins
+from django_filters import rest_framework
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Avg
 from django.conf import settings
 from django.core.mail import send_mail
 from rest_framework.decorators import action, api_view, permission_classes
@@ -17,34 +20,48 @@ from .serializers import (CategorySerializer, CommentSerializer, GetTokenSeriali
                              GenreSerializer, ReviewSerializer, RegisterSerializer,
                              TitleSerializer, UserAdminSerializer, UserSerializer)
 from reviews.models import Category, Genre, Review, Title, User
-from api.permissions import (IsAdmin, IsAdminOrOwnerOrReadOnly,
-                             IsAdminOrReadOnly)
+from api.permissions import (IsAdmin, IsAdminOrOwnerOrReadOnly, IsAdminOrReadOnly)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserAdminSerializer
     permission_classes = (IsAdmin,)
     pagination_class = PageNumberPagination
+    filter_backends = (filters.SearchFilter,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    search_fields = ('username',)
     lookup_field = 'username'
 
-    @action(detail=False, methods=['get', 'patch'],
+    @action(detail=False, methods=['GET', 'PATCH'],
             permission_classes=[IsAuthenticated],
             serializer_class=UserSerializer,
             url_path='me',
             pagination_class=None)
     def me(self, request):
+        user = get_object_or_404(User, username=self.request.user)
+        serializer = self.get_serializer(self.request.user)
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        if request.method == "PATCH":
+        if request.method == 'PATCH':
             serializer = self.get_serializer(
-                request.user,
-                data=request.data,
-                partial=True
+                user, data=request.data, partial=True
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        # return Response(serializer.data)
+
+        # if request.method == "PATCH":
+        #     serializer = self.get_serializer(
+        #         request.user,
+        #         data=request.data,
+        #         partial=True
+        #     )
+        #     serializer.is_valid(raise_exception=True)
+        #     serializer.save()
+        #     return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
@@ -66,7 +83,7 @@ def register(request):
                 [user.email]
             )
 
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     except KeyError as e:
@@ -96,30 +113,60 @@ def get_token(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class TitlesFilter(rest_framework.FilterSet):
+    category = rest_framework.CharFilter(field_name='category__slug')
+    genre = rest_framework.CharFilter(field_name='genre__slug')
+    year = rest_framework.NumberFilter(field_name='year')
+    name = rest_framework.CharFilter(field_name='name')
+
+    class Meta:
+        model = Title
+        fields = 'category', 'genre', 'year', 'name'
+
+
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(
+        rating=Avg('reviews__score')
+    ).order_by('name')
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = (TitlesFilter)
+    filterser_fields = ('category', 'genre', 'name', 'year')
     pagination_class = PageNumberPagination
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(mixins.CreateModelMixin,
+                      mixins.ListModelMixin,
+                      mixins.DestroyModelMixin,
+                      viewsets.GenericViewSet):
     queryset = Category.objects.all()
+    filter_backends = (filters.SearchFilter, )
+    search_fields = ('name',)
     pagination_class = PageNumberPagination
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
 
 
-class GenreViewSet(viewsets.ModelViewSet):
+class GenreViewSet(mixins.CreateModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
     queryset = Genre.objects.all()
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
     pagination_class = PageNumberPagination
     serializer_class = GenreSerializer
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
+    lookup_field = 'slug'
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = (IsAdminOrOwnerOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_title(self):
         title_id = self.kwargs.get('title_id')
@@ -136,6 +183,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = (IsAdminOrOwnerOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
 
     def get_review(self):
         review_id = self.kwargs.get('review_id')

@@ -21,8 +21,8 @@ v1_router.register('users', UserViewSet, basename='users')
 
 urlpatterns = [
     path('v1/', include(v1_router.urls)),
-    path('v1/', include('djoser.urls.jwt')),
-    path('v1/auth/', include('django.contrib.auth.urls')),
+    # path('v1/', include('djoser.urls.jwt')),
+    # path('v1/auth/', include('django.contrib.auth.urls')),
     path('v1/auth/signup/', register, name='signup'),
     path('v1/auth/token/', get_token, name='token'),
 

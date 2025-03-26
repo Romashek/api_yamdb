@@ -15,10 +15,10 @@ class User(AbstractUser):
         (ADMIN, 'admin'),
         (MODERATOR, 'moderator')
     ]
-    username = models.SlugField(max_length=150, unique=True)
+    username = models.CharField(max_length=150, unique=True)
     email = models.EmailField(max_length=254, unique=True)
     bio = models.TextField(blank=True)
-    role = models.SlugField(choices=ROLES, default=USER)
+    role = models.CharField(max_length=50, choices=ROLES, default=USER)
     confirmation_code = models.SlugField(null=True, blank=True)
 
     class Meta:

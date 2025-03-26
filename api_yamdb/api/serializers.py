@@ -1,8 +1,11 @@
+from django.db.utils import IntegrityError
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 import re
 from django.shortcuts import get_object_or_404
 from rest_framework.validators import UniqueValidator
 from rest_framework.relations import SlugRelatedField
+from django.core.validators import EmailValidator, RegexValidator
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
@@ -91,14 +94,7 @@ class UserSerializer(serializers.ModelSerializer):
     [GET] персональные данные пользователя.
     [POST] заполнение полей 'first_name', 'last_name' и 'bio'.
     """
-
-    role = serializers.StringRelatedField(read_only=True)
-    username = serializers.CharField(
-        required=True,
-        max_length=150,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-    email = serializers.EmailField(max_length=254, read_only=True)
+    role = serializers.CharField(read_only=True)
 
     class Meta:
         model = User
@@ -112,6 +108,17 @@ class UserSerializer(serializers.ModelSerializer):
             'role'
         )
         read_only_fields = ('role',)
+    
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError(
+                {"username": ["Вы не можете использоват этот username!"]}
+            )
+        if not bool(re.match(r'^[\w.@+-]+$', value)):
+            raise serializers.ValidationError(
+                'Некорректные символы в username'
+            )
+        return value
 
 
 class UserAdminSerializer(serializers.ModelSerializer):
@@ -133,13 +140,12 @@ class UserAdminSerializer(serializers.ModelSerializer):
             'role'
         )
 
-    def username_validator(self, value):
-        matched_symbols = re.sub(r"[\w.@+-]", "", value)
+    def validate_username(self, value):
         if value == 'me':
             raise serializers.ValidationError(
                 {"username": ["Вы не можете использоват этот username!"]}
             )
-        if value in matched_symbols:
+        if not bool(re.match(r'^[\w.@+-]+$', value)):
             raise serializers.ValidationError(
                 'Некорректные символы в username'
             )
@@ -147,13 +153,14 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
+    username = serializers.RegexField(
         max_length=150,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        regex=r'^[\w.@+-]+',
+        required=True
     )
     email = serializers.EmailField(
         max_length=254,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        required=True
     )
 
     class Meta:
@@ -166,13 +173,22 @@ class RegisterSerializer(serializers.ModelSerializer):
                 {"username": ["Вы не можете использоват этот username!"]}
             )
         return data
+    
+    def create(self, validated_data):
+        try:
+            user, _ = User.objects.get_or_create(**validated_data)
+        except IntegrityError:
+            raise ValidationError(
+                'Error email or username.',
+            )
+        return user
 
 
 class GetTokenSerializer(serializers.Serializer):
-    username = serializers.SlugField(
+    username = serializers.CharField(
         max_length=150, required=True
     )
-    confirmation_code = serializers.SlugField(
+    confirmation_code = serializers.CharField(
         required=True, max_length=254
     )
 
