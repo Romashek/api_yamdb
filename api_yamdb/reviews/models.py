@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
-from ratings.constants import NUMBER_OF_CHAR
+from reviews.constants import NUMBER_OF_CHAR
 
 
 class User(AbstractUser):
@@ -118,7 +118,8 @@ class Review(models.Model):
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
-        verbose_name='Произведение'
+        verbose_name='Произведение',
+        related_name="reviews"
     )
     text = models.TextField(
         verbose_name='Текст',
@@ -126,7 +127,8 @@ class Review(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор'
+        verbose_name='Автор',
+        related_name="reviews"
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
@@ -139,7 +141,6 @@ class Review(models.Model):
     )
 
     class Meta:
-        default_related_name = 'reviews'
         ordering = ('-pub_date',)
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'

@@ -26,7 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'djoser',
     'api',
-    'ratings',
+    'reviews',
 ]
 
 MIDDLEWARE = [
@@ -110,7 +110,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = ((BASE_DIR / 'static/'),)
 
-AUTH_USER_MODEL = 'ratings.User'
+AUTH_USER_MODEL = 'reviews.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS':
@@ -131,3 +131,7 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+EMAIL_ADMIN = 'admin@yamdb.ru'
