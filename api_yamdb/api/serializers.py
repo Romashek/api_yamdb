@@ -67,8 +67,6 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """
     Сериалайзер для эндпоинта 'users/me/' для любого авторизов. пользователя.
-    [GET] персональные данные пользователя.
-    [POST] заполнение полей 'first_name', 'last_name' и 'bio'.
     """
     role = serializers.CharField(read_only=True)
 
@@ -100,9 +98,6 @@ class UserSerializer(serializers.ModelSerializer):
 class UserAdminSerializer(serializers.ModelSerializer):
     """
     Сериалайзер для эндпоинта 'users/' для пользователя с ролью 'admin'.
-    [GET] получение списка пользователей.
-    [POST] регистрация нового пользователя.
-    [GET, PATCH, DELETE] работа с пользователем по username.
     """
     class Meta:
         model = User
