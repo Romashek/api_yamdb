@@ -1,9 +1,11 @@
 import csv
 import os
-from django.core.management.base import BaseCommand
+
 from django.conf import settings
-from reviews.models import (Category, Comment, Genre, GenreTitle,
-                            Review, Title, User)
+from django.core.management.base import BaseCommand
+
+from reviews.models import (Category, Comment, Genre, GenreTitle, Review,
+                            Title, User)
 
 
 def category_load(row):

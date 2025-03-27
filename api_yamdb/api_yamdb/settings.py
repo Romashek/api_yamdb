@@ -1,7 +1,5 @@
-from pathlib import Path
-
 from datetime import timedelta
-
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -102,7 +100,12 @@ USE_L10N = True
 USE_TZ = True
 
 MAX_LENGTH_CATEGORY_NAME = 20
-
+MAX_LENGTH_USERNAME = 150
+MAX_LENGTH_EMAIL = 254
+MAX_LENGTH_TITLE = 256
+MAX_LENGTH_SLUG = 50
+VALID_CHARACTERS_USERNAME = r'^[\w.@+-]+'
+ME_URL = 'me'
 
 # Static files (CSS, JavaScript, Images)
 

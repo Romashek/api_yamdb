@@ -1,7 +1,9 @@
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+from django.conf import settings
+
 
 from reviews.constants import NUMBER_OF_CHAR
 
@@ -15,18 +17,22 @@ class User(AbstractUser):
         (ADMIN, 'admin'),
         (MODERATOR, 'moderator')
     ]
-    username = models.CharField(max_length=150, unique=True)
-    email = models.EmailField(max_length=254, unique=True)
+    username = models.CharField(
+        max_length=settings.MAX_LENGTH_USERNAME,
+        unique=True
+    )
+    email = models.EmailField(
+        max_length=settings.MAX_LENGTH_EMAIL,
+        unique=True
+    )
     bio = models.TextField(blank=True)
     role = models.CharField(max_length=50, choices=ROLES, default=USER)
     confirmation_code = models.SlugField(null=True, blank=True)
 
     class Meta:
-        ordering = ['id']
-
-    @property
-    def is_user(self):
-        return self.role == self.USER
+        ordering = ['username']
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
 
     @property
     def is_admin(self):
@@ -38,8 +44,8 @@ class User(AbstractUser):
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256)
-    slug = models.SlugField(unique=True, max_length=50)
+    name = models.CharField(max_length=settings.MAX_LENGTH_TITLE)
+    slug = models.SlugField(unique=True)
 
     class Meta:
         ordering = ['name']
@@ -51,7 +57,7 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=settings.MAX_LENGTH_TITLE)
     slug = models.SlugField(unique=True)
 
     class Meta:
@@ -67,14 +73,12 @@ class GenreTitle(models.Model):
     title = models.ForeignKey(
         'Title',
         on_delete=models.CASCADE,
-        related_name='titles',
         blank=True,
         null=True
     )
     genre = models.ForeignKey(
         'Genre',
         on_delete=models.CASCADE,
-        related_name='genres',
         blank=True,
         null=True
     )
@@ -82,14 +86,15 @@ class GenreTitle(models.Model):
     class Meta:
         verbose_name = 'Жанр произведения'
         verbose_name_plural = 'Жанры произведения'
+        default_related_name = 'genres'
 
     def __str__(self):
         return f'{self.title} - {self.genre}'
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=200)
-    year = models.IntegerField(
+    name = models.CharField(max_length=settings.MAX_LENGTH_TITLE)
+    year = models.SmallIntegerField(
         validators=[MaxValueValidator(timezone.now().year)]
     )
     genre = models.ManyToManyField(
