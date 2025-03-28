@@ -11,9 +11,9 @@ from reviews.models import (Category, Comment, Genre, GenreTitle, Review,
 def category_load(row):
     Category.objects.update_or_create(
         id=row['id'],
-        name=row['name'],
-        slug=row['slug']
+        defaults=row
     )
+
 
 
 def comment_load(row):
@@ -31,8 +31,7 @@ def comment_load(row):
 def genre_load(row):
     Genre.objects.update_or_create(
         id=row['id'],
-        name=row['name'],
-        slug=row['slug']
+        defaults=row
     )
 
 
@@ -72,12 +71,7 @@ def title_load(row):
 def users_load(row):
     User.objects.update_or_create(
         id=row['id'],
-        username=row['username'],
-        email=row['email'],
-        role=row['role'],
-        bio=row['bio'],
-        first_name=row['first_name'],
-        last_name=row['last_name'],
+        defaults=row
     )
 
 
@@ -115,8 +109,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS
                                   ('Data imported successfully'))
             except FileNotFoundError:
-                return self.stdout.write(self.style.ERROR
-                                         (f'File {filename} not found'))
+                return self.stdout.write(self.style.ERROR(
+                                         f'File {filename} not found'
+                                         ))
             except Exception as e:
-                return self.stdout.write(self.style.ERROR
-                                         (f'Error importing data: {e}'))
+                return self.stdout.write(self.style.ERROR(
+                    f'Error importing data: {e}'
+                    ))

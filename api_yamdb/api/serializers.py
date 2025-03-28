@@ -1,12 +1,12 @@
 import re
 
+from django.conf import settings
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.relations import SlugRelatedField
 
-from django.conf import settings
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
@@ -73,6 +73,7 @@ class UserSerializer(serializers.ModelSerializer):
     Сериалайзер для эндпоинта 'users/me/' для любого
     авторизованного пользователя.
     """
+    username = serializers.CharField(max_length=settings.MAX_LENGTH_USERNAME)
 
     class Meta:
         model = User
@@ -89,16 +90,20 @@ class UserSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         if value == settings.ME_URL:
             raise serializers.ValidationError(
-                {"username": ["Вы не можете использоват этот username!"]}
+                {"username": ["Вы не можете использовать этот username!"]}
             )
         if not bool(re.match(settings.VALID_CHARACTERS_USERNAME, value)):
             raise serializers.ValidationError(
                 'Некорректные символы в username'
             )
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError(
+                'Пользователь с таким username уже существует'
+            )
         return value
 
 
-class UserAdminSerializer(serializers.ModelSerializer):
+class UserAdminSerializer(UserSerializer):
     """
     Сериалайзер для эндпоинта 'users/' для пользователя с ролью 'admin'.
     """
@@ -113,17 +118,6 @@ class UserAdminSerializer(serializers.ModelSerializer):
             'bio',
             'role'
         )
-
-    def validate_username(self, value):
-        if value == settings.ME_URL:
-            raise serializers.ValidationError(
-                {"username": ["Вы не можете использоват этот username!"]}
-            )
-        if not bool(re.match(settings.VALID_CHARACTERS_USERNAME, value)):
-            raise serializers.ValidationError(
-                'Некорректные символы в username'
-            )
-        return value
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -165,6 +159,17 @@ class GetTokenSerializer(serializers.Serializer):
     confirmation_code = serializers.CharField(
         required=True
     )
+    def validate(self, data):
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+
+        user = get_object_or_404(User, username=username)
+
+        if user.confirmation_code != confirmation_code:
+            raise serializers.ValidationError("Неверный код подтверждения")
+
+        data['user'] = user
+        return data
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
@@ -191,17 +196,13 @@ class TitleWriteSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
         slug_field='slug',
-        many=True
+        many=True,
+        allow_empty=False
     )
 
     class Meta:
         fields = '__all__'
         model = Title
 
-# То что в сети нашел, но я не разобрался как это работает
-    # def get_rating(self, obj):
-    #     reviews = Review.objects.filter(title=obj)
-    #     if reviews:
-    #         ratings_sum = sum(review.score for review in reviews)
-    #         return round(ratings_sum / len(reviews))
-    #     return None
+    def to_representation(self, instance):
+        return TitleReadSerializer(instance).data

@@ -1,15 +1,16 @@
 import uuid
-from django.db import models
 
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db import models
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -73,7 +74,7 @@ def register(request):
     user = serializer.save()
     confirmation_code = str(uuid.uuid4()).split("-")[0]
     user.confirmation_code = confirmation_code
-    user.save()
+    user.save() 
     send_mail(
         'Код подтверждения',
         f'Ваш код для подтверждения: {user.confirmation_code}',
@@ -88,23 +89,13 @@ def register(request):
 def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data['username']
-    confirmation_code = serializer.validated_data['confirmation_code']
+    user = serializer.validated_data['user']
 
-    try:
-        user = User.objects.get(username=username)
-        if user.confirmation_code == confirmation_code:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            })
-        else:
-            return Response({"error": "Неверный код подтверждения"},
-                            status=status.HTTP_400_BAD_REQUEST)
-    except User.DoesNotExist:
-        return Response({"error": "Пользователь не найден"},
-                        status=status.HTTP_404_NOT_FOUND)
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    })
 
 
 class TitleViewSet(viewsets.ModelViewSet):
@@ -124,26 +115,25 @@ class TitleViewSet(viewsets.ModelViewSet):
         return TitleWriteSerializer
 
 
-class CategoryViewSet(GeneralRequirements,
-                      mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+class BaseViewSet(GeneralRequirements,
+                  mixins.CreateModelMixin,
+                  mixins.ListModelMixin,
+                  mixins.DestroyModelMixin,
+                  viewsets.GenericViewSet):
+    pass
+
+
+class CategoryViewSet(BaseViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
-
-class GenreViewSet(GeneralRequirements,
-                   mixins.CreateModelMixin,
-                   mixins.ListModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+class GenreViewSet(BaseViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
 class PersonPermission():
-    permission_classes = (IsAdminOrOwnerOrReadOnly,)
+    permission_classes = (IsAdminOrOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
     ordering = ('name',)
 
