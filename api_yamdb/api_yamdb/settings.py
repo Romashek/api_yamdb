@@ -1,20 +1,14 @@
-from pathlib import Path
-
 from datetime import timedelta
-
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -25,8 +19,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'djoser',
-    'api',
     'reviews',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -91,7 +85,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 
@@ -102,7 +96,12 @@ USE_L10N = True
 USE_TZ = True
 
 MAX_LENGTH_CATEGORY_NAME = 20
-
+MAX_LENGTH_USERNAME = 150
+MAX_LENGTH_EMAIL = 254
+MAX_LENGTH_TITLE = 256
+MAX_LENGTH_SLUG = 50
+VALID_CHARACTERS_USERNAME = r'^[\w.@+-]+'
+ME_URL = 'me'
 
 # Static files (CSS, JavaScript, Images)
 
