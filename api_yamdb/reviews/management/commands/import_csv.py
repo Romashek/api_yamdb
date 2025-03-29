@@ -15,7 +15,6 @@ def category_load(row):
     )
 
 
-
 def comment_load(row):
     review = Review.objects.get(id=row['review_id'])
     author = User.objects.get(id=row['author'])
