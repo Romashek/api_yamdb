@@ -67,7 +67,7 @@ class NameSlugModel(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return self.name[:constants.NUMBER_OF_CHAR]
 
 
 class Category(NameSlugModel):
@@ -102,7 +102,7 @@ class GenreTitle(models.Model):
         default_related_name = 'genres'
 
     def __str__(self):
-        return f'{self.title} - {self.genre}'
+        return f'{self.title[:constants.NUMBER_OF_CHAR]} - {self.genre}'
 
 
 class Title(models.Model):
@@ -137,7 +137,7 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return self.name
+        return self.name[:constants.NUMBER_OF_CHAR]
 
 
 class TextModel(models.Model):
@@ -181,7 +181,7 @@ class Review(TextModel):
         ]
 
     def __str__(self):
-        return self.text[:NUMBER_OF_CHAR]
+        return self.text[:constants.NUMBER_OF_CHAR]
 
 
 class Comment(TextModel):
@@ -197,6 +197,6 @@ class Comment(TextModel):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return (f'{self.text[:NUMBER_OF_CHAR]}, '
-                f'Отзыв: {self.review.text[:NUMBER_OF_CHAR]}, '
+        return (f'{self.text[:constants.NUMBER_OF_CHAR]}, '
+                f'Отзыв: {self.review.text[:constants.NUMBER_OF_CHAR]}, '
                 f'Автор: {self.author}')
