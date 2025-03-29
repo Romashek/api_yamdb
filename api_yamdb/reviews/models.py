@@ -1,11 +1,10 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from .validators import validate_username_contains_me, validate_year
-from django.utils import timezone
 
-from reviews.constants import NUMBER_OF_CHAR
+from reviews import constants
+
+from .validators import validate_username_contains_me, validate_year
 
 
 class User(AbstractUser):
@@ -19,13 +18,13 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        max_length=settings.MAX_LENGTH_USERNAME,
+        max_length=constants.MAX_LENGTH_USERNAME,
         unique=True,
         validators=[validate_username_contains_me],
         verbose_name='Имя пользователя'
     )
     email = models.EmailField(
-        max_length=settings.MAX_LENGTH_EMAIL,
+        max_length=constants.MAX_LENGTH_EMAIL,
         unique=True,
         verbose_name='Электронная почта'
     )
@@ -60,7 +59,7 @@ class User(AbstractUser):
 
 
 class NameSlugModel(models.Model):
-    name = models.CharField(max_length=settings.MAX_LENGTH_TITLE)
+    name = models.CharField(max_length=constants.MAX_LENGTH_TITLE)
     slug = models.SlugField(unique=True)
 
     class Meta:
@@ -108,7 +107,7 @@ class GenreTitle(models.Model):
 
 class Title(models.Model):
     name = models.CharField(
-        max_length=settings.MAX_LENGTH_TITLE,
+        max_length=constants.MAX_LENGTH_TITLE,
         verbose_name='Название'
     )
     year = models.SmallIntegerField(
