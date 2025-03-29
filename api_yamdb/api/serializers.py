@@ -1,5 +1,6 @@
 import re
 
+from django.contrib.auth.tokens import default_token_generator
 from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -164,10 +165,8 @@ class GetTokenSerializer(serializers.Serializer):
     def validate(self, data):
         username = data.get('username')
         confirmation_code = data.get('confirmation_code')
-
         user = get_object_or_404(User, username=username)
-
-        if user.confirmation_code != confirmation_code:
+        if not default_token_generator.check_token(user, confirmation_code):
             raise serializers.ValidationError("Неверный код подтверждения")
 
         data['user'] = user

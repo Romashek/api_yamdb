@@ -1,5 +1,4 @@
-import uuid
-
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
@@ -71,12 +70,10 @@ def register(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    confirmation_code = str(uuid.uuid4()).split("-")[0]
-    user.confirmation_code = confirmation_code
-    user.save() 
+    confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
-        f'Ваш код для подтверждения: {user.confirmation_code}',
+        f'Ваш код для подтверждения: {confirmation_code}',
         constants.EMAIL_ADMIN,
         [user.email]
     )
