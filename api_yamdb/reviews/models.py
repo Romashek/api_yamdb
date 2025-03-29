@@ -1,11 +1,10 @@
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from .validators import validate_username_contains_me, validate_year
-from django.utils import timezone
 
-from reviews.constants import NUMBER_OF_CHAR
+from reviews import constants
+
+from .validators import validate_username_contains_me, validate_year
 
 
 class User(AbstractUser):
@@ -19,13 +18,13 @@ class User(AbstractUser):
     ]
 
     username = models.CharField(
-        max_length=settings.MAX_LENGTH_USERNAME,
+        max_length=constants.MAX_LENGTH_USERNAME,
         unique=True,
         validators=[validate_username_contains_me],
         verbose_name='Имя пользователя'
     )
     email = models.EmailField(
-        max_length=settings.MAX_LENGTH_EMAIL,
+        max_length=constants.MAX_LENGTH_EMAIL,
         unique=True,
         verbose_name='Электронная почта'
     )
@@ -60,7 +59,7 @@ class User(AbstractUser):
 
 
 class NameSlugModel(models.Model):
-    name = models.CharField(max_length=settings.MAX_LENGTH_TITLE)
+    name = models.CharField(max_length=constants.MAX_LENGTH_TITLE)
     slug = models.SlugField(unique=True)
 
     class Meta:
@@ -68,7 +67,7 @@ class NameSlugModel(models.Model):
         ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return self.name[:constants.NUMBER_OF_CHAR]
 
 
 class Category(NameSlugModel):
@@ -103,12 +102,12 @@ class GenreTitle(models.Model):
         default_related_name = 'genres'
 
     def __str__(self):
-        return f'{self.title} - {self.genre}'
+        return f'{self.title[:constants.NUMBER_OF_CHAR]} - {self.genre}'
 
 
 class Title(models.Model):
     name = models.CharField(
-        max_length=settings.MAX_LENGTH_TITLE,
+        max_length=constants.MAX_LENGTH_TITLE,
         verbose_name='Название'
     )
     year = models.SmallIntegerField(
@@ -138,7 +137,7 @@ class Title(models.Model):
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
-        return self.name
+        return self.name[:constants.NUMBER_OF_CHAR]
 
 
 class TextModel(models.Model):
@@ -182,7 +181,7 @@ class Review(TextModel):
         ]
 
     def __str__(self):
-        return self.text[:NUMBER_OF_CHAR]
+        return self.text[:constants.NUMBER_OF_CHAR]
 
 
 class Comment(TextModel):
@@ -198,6 +197,6 @@ class Comment(TextModel):
         verbose_name_plural = 'Комментарии'
 
     def __str__(self):
-        return (f'{self.text[:NUMBER_OF_CHAR]}, '
-                f'Отзыв: {self.review.text[:NUMBER_OF_CHAR]}, '
+        return (f'{self.text[:constants.NUMBER_OF_CHAR]}, '
+                f'Отзыв: {self.review.text[:constants.NUMBER_OF_CHAR]}, '
                 f'Автор: {self.author}')

@@ -95,14 +95,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-MAX_LENGTH_CATEGORY_NAME = 20
-MAX_LENGTH_USERNAME = 150
-MAX_LENGTH_EMAIL = 254
-MAX_LENGTH_TITLE = 256
-MAX_LENGTH_SLUG = 50
-VALID_CHARACTERS_USERNAME = r'^[\w.@+-]+'
-ME_URL = 'me'
-
 # Static files (CSS, JavaScript, Images)
 
 STATIC_URL = '/static/'
@@ -133,4 +125,3 @@ SIMPLE_JWT = {
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
-EMAIL_ADMIN = 'admin@yamdb.ru'

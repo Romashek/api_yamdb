@@ -1,8 +1,5 @@
-import uuid
-
-from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db import models
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -22,6 +19,7 @@ from api.serializers import (CategorySerializer, CommentSerializer,
                              RegisterSerializer, ReviewSerializer,
                              TitleReadSerializer, TitleWriteSerializer,
                              UserAdminSerializer, UserSerializer)
+from reviews import constants
 from reviews.models import Category, Genre, Review, Title, User
 
 
@@ -48,7 +46,7 @@ class UserViewSet(GeneralRequirements,
     @action(detail=False, methods=['GET', 'PATCH'],
             permission_classes=[IsAuthenticated],
             serializer_class=UserSerializer,
-            url_path='me',
+            url_path=constants.ME_URL,
             pagination_class=None)
     def me(self, request):
         user = get_object_or_404(User, username=self.request.user)
@@ -72,13 +70,11 @@ def register(request):
     serializer = RegisterSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    confirmation_code = str(uuid.uuid4()).split("-")[0]
-    user.confirmation_code = confirmation_code
-    user.save() 
+    confirmation_code = default_token_generator.make_token(user)
     send_mail(
         'Код подтверждения',
-        f'Ваш код для подтверждения: {user.confirmation_code}',
-        settings.EMAIL_ADMIN,
+        f'Ваш код для подтверждения: {confirmation_code}',
+        constants.EMAIL_ADMIN,
         [user.email]
     )
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -90,7 +86,6 @@ def get_token(request):
     serializer = GetTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = serializer.validated_data['user']
-
     refresh = RefreshToken.for_user(user)
     return Response({
         'refresh': str(refresh),
@@ -126,6 +121,7 @@ class BaseViewSet(GeneralRequirements,
 class CategoryViewSet(BaseViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
 
 class GenreViewSet(BaseViewSet):
     queryset = Genre.objects.all()

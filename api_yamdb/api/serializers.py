@@ -1,12 +1,12 @@
 import re
 
-from django.conf import settings
-from django.db.utils import IntegrityError
+from django.contrib.auth.tokens import default_token_generator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.relations import SlugRelatedField
 
+from reviews import constants
 from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
@@ -73,7 +73,8 @@ class UserSerializer(serializers.ModelSerializer):
     Сериалайзер для эндпоинта 'users/me/' для любого
     авторизованного пользователя.
     """
-    username = serializers.CharField(max_length=settings.MAX_LENGTH_USERNAME)
+
+    username = serializers.CharField(max_length=constants.MAX_LENGTH_USERNAME)
 
     class Meta:
         model = User
@@ -88,11 +89,11 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('role',)
 
     def validate_username(self, value):
-        if value == settings.ME_URL:
+        if value == constants.ME_URL:
             raise serializers.ValidationError(
                 {"username": ["Вы не можете использовать этот username!"]}
             )
-        if not bool(re.match(settings.VALID_CHARACTERS_USERNAME, value)):
+        if not bool(re.match(constants.VALID_CHARACTERS_USERNAME, value)):
             raise serializers.ValidationError(
                 'Некорректные символы в username'
             )
@@ -122,12 +123,12 @@ class UserAdminSerializer(UserSerializer):
 
 class RegisterSerializer(serializers.Serializer):
     username = serializers.RegexField(
-        max_length=settings.MAX_LENGTH_USERNAME,
-        regex=settings.VALID_CHARACTERS_USERNAME,
+        max_length=constants.MAX_LENGTH_USERNAME,
+        regex=constants.VALID_CHARACTERS_USERNAME,
         required=True
     )
     email = serializers.EmailField(
-        max_length=settings.MAX_LENGTH_EMAIL,
+        max_length=constants.MAX_LENGTH_EMAIL,
         required=True
     )
 
@@ -136,36 +137,47 @@ class RegisterSerializer(serializers.Serializer):
         fields = ('username', 'email')
 
     def validate(self, data):
-        if data['username'] == 'me':
+        if User.objects.filter(username=data['username']).exists():
+            user = User.objects.get(username=data['username'])
+            if user.email != data['email']:
+                username = data['username']
+                raise serializers.ValidationError(
+                    f'Username - {username} already exists.'
+                )
+        if User.objects.filter(email=data['email']).exists():
+            user = User.objects.get(email=data['email'])
+            if user.username != data['username']:
+                email = data['email']
+                raise serializers.ValidationError(
+                    f'Email - {email} already exists.'
+                )
+        return data
+
+    def validate_username(self, value):
+        if value == constants.ME_URL:
             raise serializers.ValidationError(
                 {"username": ["Вы не можете использоват этот username!"]}
             )
-        return data
+        return value
 
     def create(self, validated_data):
-        try:
-            user, _ = User.objects.get_or_create(**validated_data)
-        except IntegrityError:
-            raise ValidationError(
-                'Error email or username.',
-            )
+        user, _ = User.objects.get_or_create(**validated_data)
         return user
 
 
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(
-        max_length=settings.MAX_LENGTH_USERNAME, required=True
+        max_length=constants.MAX_LENGTH_USERNAME, required=True
     )
     confirmation_code = serializers.CharField(
         required=True
     )
+
     def validate(self, data):
         username = data.get('username')
         confirmation_code = data.get('confirmation_code')
-
         user = get_object_or_404(User, username=username)
-
-        if user.confirmation_code != confirmation_code:
+        if not default_token_generator.check_token(user, confirmation_code):
             raise serializers.ValidationError("Неверный код подтверждения")
 
         data['user'] = user
