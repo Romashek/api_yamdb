@@ -113,5 +113,4 @@ class Command(BaseCommand):
                                          ))
             except Exception as e:
                 return self.stdout.write(self.style.ERROR(
-                    f'Error importing data: {e}'
-                    ))
+                    f'Error importing data: {e}'))

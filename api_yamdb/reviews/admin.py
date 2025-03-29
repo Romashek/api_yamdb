@@ -44,7 +44,12 @@ class TitleGenreInline(admin.TabularInline):
 
 @admin.register(Title)
 class TitleAdmin(BaseAdmin):
-    list_display = ('name', 'year', 'category', 'display_genres', 'description')
+    list_display = (
+        'name',
+        'year',
+        'category',
+        'display_genres',
+        'description')
     search_fields = ('name',)
     list_filter = ('name',)
     inlines = (TitleGenreInline,)
@@ -57,8 +62,11 @@ class TitleAdmin(BaseAdmin):
 class CustomUserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {'fields': ('first_name', 'last_name', 'email', 'bio')}),
-        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        (_('Personal info'), {'fields': ('first_name',
+                                         'last_name', 'email', 'bio')}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff',
+                                       'is_superuser', 'groups',
+                                       'user_permissions')}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
         (_('Additional info'), {'fields': ('role', 'confirmation_code')}),
     )
@@ -68,8 +76,10 @@ class CustomUserAdmin(BaseUserAdmin):
             'fields': ('username', 'password1', 'password2'),
         }),
     )
-    list_display = ('username', 'email', 'role', 'bio', 'first_name', 'last_name', 'confirmation_code')
+    list_display = ('username', 'email', 'role', 'bio',
+                    'first_name', 'last_name', 'confirmation_code')
     search_fields = ('username', 'role')
     list_filter = ('username',)
+
 
 admin.site.register(User, CustomUserAdmin)
