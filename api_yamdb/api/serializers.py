@@ -1,7 +1,6 @@
 import re
 
 from django.contrib.auth.tokens import default_token_generator
-from django.db.utils import IntegrityError
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -138,19 +137,31 @@ class RegisterSerializer(serializers.Serializer):
         fields = ('username', 'email')
 
     def validate(self, data):
-        if data['username'] == constants.ME_URL:
+        if User.objects.filter(username=data['username']).exists():
+            user = User.objects.get(username=data['username'])
+            if user.email != data['email']:
+                username = data['username']
+                raise serializers.ValidationError(
+                    f'Username - {username} already exists.'
+                )
+        if User.objects.filter(email=data['email']).exists():
+            user = User.objects.get(email=data['email'])
+            if user.username != data['username']:
+                email = data['email']
+                raise serializers.ValidationError(
+                    f'Email - {email} already exists.'
+                )
+        return data
+
+    def validate_username(self, value):
+        if value == constants.ME_URL:
             raise serializers.ValidationError(
                 {"username": ["Вы не можете использоват этот username!"]}
             )
-        return data
+        return value
 
     def create(self, validated_data):
-        try:
-            user, _ = User.objects.get_or_create(**validated_data)
-        except IntegrityError:
-            raise ValidationError(
-                'Error email or username.',
-            )
+        user, _ = User.objects.get_or_create(**validated_data)
         return user
 
 
