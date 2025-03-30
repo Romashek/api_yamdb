@@ -1,9 +1,9 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.db import models
 
 from reviews import constants
-
 from .validators import validate_username_contains_me, validate_year
 
 
@@ -20,7 +20,15 @@ class User(AbstractUser):
     username = models.CharField(
         max_length=constants.MAX_LENGTH_USERNAME,
         unique=True,
-        validators=[validate_username_contains_me],
+        validators=[
+            validate_username_contains_me,
+            RegexValidator(
+                regex=constants.VALID_CHARACTERS_USERNAME,
+                message='Имя пользователя должно\
+                    соответствовать шаблону.',
+                code='invalid_username'
+            )
+        ],
         verbose_name='Имя пользователя'
     )
     email = models.EmailField(
@@ -33,15 +41,10 @@ class User(AbstractUser):
         verbose_name='Биография'
     )
     role = models.CharField(
-        max_length=50,
+        max_length=constants.MAX_LENGTH_ROLE,
         choices=ROLES,
         default=USER,
         verbose_name='Роль'
-    )
-    confirmation_code = models.SlugField(
-        null=True,
-        blank=True,
-        verbose_name='Код подтверждения'
     )
 
     class Meta:
@@ -51,7 +54,7 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        return self.role == self.ADMIN
+        return self.role == self.ADMIN or self.is_superuser
 
     @property
     def is_moderator(self):
@@ -167,7 +170,8 @@ class Review(TextModel):
     )
     score = models.PositiveSmallIntegerField(
         verbose_name='Оценка',
-        validators=[MinValueValidator(1), MaxValueValidator(10)]
+        validators=[MinValueValidator(constants.MIN_SCORE),
+                    MaxValueValidator(constants.MAX_SCORE)]
     )
 
     class Meta(TextModel.Meta):

@@ -13,5 +13,5 @@ def validate_year(value):
 
 
 def validate_username_contains_me(value):
-    if ME_URL not in value:
+    if ME_URL != value:
         raise ValidationError(f'Username must contain {ME_URL}.')

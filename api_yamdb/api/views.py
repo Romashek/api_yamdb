@@ -23,22 +23,19 @@ from reviews import constants
 from reviews.models import Category, Genre, Review, Title, User
 
 
-class GeneralRequirements():
+class GeneralRequirements:
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     pagination_class = PageNumberPagination
     permission_classes = (IsAdminOrReadOnly,)
     lookup_field = 'slug'
 
-    class Meta:
-        abstract = True
 
-
-class UserViewSet(GeneralRequirements,
-                  viewsets.ModelViewSet):
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserAdminSerializer
     permission_classes = (IsAdmin,)
+    filter_backends = (filters.SearchFilter,)
     http_method_names = ['get', 'post', 'patch', 'delete']
     search_fields = ('username',)
     lookup_field = 'username'
@@ -128,16 +125,13 @@ class GenreViewSet(BaseViewSet):
     serializer_class = GenreSerializer
 
 
-class PersonPermission():
+class PersonPermission:
     permission_classes = (IsAdminOrOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     http_method_names = ['get', 'post', 'patch', 'delete']
     ordering = ('name',)
 
-    class Meta:
-        abstract = True
 
-
-class ReviewViewSet(PersonPermission, viewsets.ModelViewSet,):
+class ReviewViewSet(PersonPermission, viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
 
     def get_title(self):

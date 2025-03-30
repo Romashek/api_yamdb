@@ -19,7 +19,7 @@ class CategoryAdmin(BaseAdmin):
 @admin.register(Comment)
 class CommentAdmin(BaseAdmin):
     list_display = ('review', 'text', 'author', 'pub_date')
-    search_fields = ('review',)
+    search_fields = ('review__text',)
     list_filter = ('review',)
 
 
@@ -54,12 +54,12 @@ class TitleAdmin(BaseAdmin):
     list_filter = ('name',)
     inlines = (TitleGenreInline,)
 
+    @admin.display(description='Жанры')
     def display_genres(self, obj):
         return ', '.join(genre.name for genre in obj.genre.all())
-    display_genres.short_description = 'Жанры'
 
 
-class CustomUserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         (_('Personal info'), {'fields': ('first_name',
@@ -82,4 +82,4 @@ class CustomUserAdmin(BaseUserAdmin):
     list_filter = ('username',)
 
 
-admin.site.register(User, CustomUserAdmin)
+admin.site.register(User, UserAdmin)

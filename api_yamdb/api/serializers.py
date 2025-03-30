@@ -31,16 +31,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault()
     )
 
-    def validate(self, data):
-        request = self.context['request']
-        author = request.user
-        title_id = self.context['view'].kwargs.get('title_id')
-        title = get_object_or_404(Title, pk=title_id)
-        if request.method == 'POST':
-            if title.reviews.filter(author=author).exists():
-                raise ValidationError('Можно оставлять только один отзыв!')
-        return data
-
     class Meta:
         fields = (
             'id',
@@ -50,6 +40,16 @@ class ReviewSerializer(serializers.ModelSerializer):
             'pub_date'
         )
         model = Review
+
+    def validate(self, data):
+        request = self.context['request']
+        author = request.user
+        title_id = self.context['view'].kwargs.get('title_id')
+        title = get_object_or_404(Title, pk=title_id)
+        if request.method == 'POST':
+            if title.reviews.filter(author=author).exists():
+                raise ValidationError('Можно оставлять только один отзыв!')
+        return data
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -69,11 +69,6 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Сериалайзер для эндпоинта 'users/me/' для любого
-    авторизованного пользователя.
-    """
-
     username = serializers.CharField(max_length=constants.MAX_LENGTH_USERNAME)
 
     class Meta:
@@ -105,9 +100,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserAdminSerializer(UserSerializer):
-    """
-    Сериалайзер для эндпоинта 'users/' для пользователя с ролью 'admin'.
-    """
 
     class Meta:
         model = User
@@ -192,7 +184,7 @@ class TitleReadSerializer(serializers.ModelSerializer):
     )
     rating = serializers.IntegerField(
         read_only=True,
-        default=5
+        default=0
     )
 
     class Meta:
